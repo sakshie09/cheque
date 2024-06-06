@@ -1,0 +1,47 @@
+name: Trigger auto deployment for newcontainer
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '**'
+    - '.github/workflows/newcontainer-AutoDeployTrigger-bc0f65dd-9b21-4d56-885a-3c95bd54c904.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.NEWCONTAINER_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.NEWCONTAINER_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.NEWCONTAINER_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: login.docker.com/u/login/identifier?state=hKFo2SBtM0pPUzluNjc2VEF4WjJhSWFWZ3F1Tmh3RFhTb3JTdaFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIHBuS0NhWS1aSWhlWFQwaG96VVJXR0ZTRzdSUDlJLVRko2NpZNkgbHZlOUdHbDhKdFNVcm5lUTFFVnVDMGxiakhkaTluYjk
+          registryUsername: ${{ secrets.NEWCONTAINER_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.NEWCONTAINER_REGISTRY_PASSWORD }}
+          containerAppName: newcontainer
+          resourceGroup: mycontainer
+          imageToBuild: login.docker.com/u/login/identifier?state=hKFo2SBtM0pPUzluNjc2VEF4WjJhSWFWZ3F1Tmh3RFhTb3JTdaFur3VuaXZlcnNhbC1sb2dpbqN0aWTZIHBuS0NhWS1aSWhlWFQwaG96VVJXR0ZTRzdSUDlJLVRko2NpZNkgbHZlOUdHbDhKdFNVcm5lUTFFVnVDMGxiakhkaTluYjk/newcontainer:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
